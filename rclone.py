@@ -29,12 +29,25 @@ def obtener_secreto(secret_id):
 secret_id = 'bbd00bf7-aea3-2d43-af5d-c09fc1563e84'
 secretos = obtener_secreto(secret_id)
 
-# Imprime los secretos para depuración
-print("Secretos recuperados:", secretos)
-
 def generar_nombre_bucket():
-    fecha_actual = datetime.now(timezone_lima)
-    return f"backup-{fecha_actual.strftime('%Y-%m-%d')}"
+    fecha_actual = datetime.now(timezone_lima).strftime('%Y-%m-%d')
+    
+    # Generar una letra aleatoria basada en la hora actual
+    letra_aleatoria = generar_letra_aleatoria()
+    
+    return f"backup-{fecha_actual}-{letra_aleatoria}"
+
+def generar_letra_aleatoria():
+    # Obtener el segundo actual
+    segundo_actual = datetime.now().second
+    
+    # Convertir el segundo en un índice de letra (0=a, 1=b, ..., 25=z)
+    indice_letra = segundo_actual % 26
+    
+    # Convertir el índice de letra en la letra correspondiente
+    letra = chr(indice_letra + 97)
+    
+    return letra
 
 def crear_bucket_con_rclone(bucket_name):
     comando = f"rclone mkdir COS_DESTINATION:{bucket_name} --config rclone.conf"
@@ -145,7 +158,7 @@ comando_dry_run = (
     f"--checkers {checkers} "
     f"--transfers {transfers} "
     f"--multi-thread-streams {multi_thread_streams} "
-    f"--s3-upload_concurrency {s3_upload_concurrency} "
+    f"--s3-upload-concurrency {s3_upload_concurrency} "
     f"-vv --config rclone.conf"
 )
 print("Iniciando dry run de rclone...")
@@ -156,7 +169,7 @@ comando_copia = (
     f"--checkers {checkers} "
     f"--transfers {transfers} "
     f"--multi-thread-streams {multi_thread_streams} "
-    f"--s3-upload_concurrency {s3_upload_concurrency} "
+    f"--s3-upload-concurrency {s3_upload_concurrency} "
     f"-vv --checksum --config rclone.conf"
 )
 print("Iniciando copia real de rclone...")
