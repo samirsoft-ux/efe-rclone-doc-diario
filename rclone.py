@@ -5,6 +5,7 @@ import ibm_boto3
 from ibm_botocore.client import Config
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from ibm_secrets_manager_sdk.secrets_manager_v2 import SecretsManagerV2
+import json  # Importar para manejar la conversión de la carga útil del secreto
 
 # Establecer la zona horaria de Lima, Perú
 timezone_lima = zoneinfo.ZoneInfo("America/Lima")
@@ -17,12 +18,13 @@ secrets_manager.set_service_url('https://65e7ac31-7d3d-4c5f-9545-f848e11f8a26.pr
 def obtener_secreto(secret_id):
     response = secrets_manager.get_secret(id=secret_id)
     secret_data = response.get_result()
-    # Asumiendo que el secreto es un objeto JSON con tus variables
-    secret_values = secret_data['resources'][0]['secret_data']  # Ajuste según la estructura real de tus datos
+    # Accede a la clave 'data' para los secretos tipo clave-valor
+    secret_values = secret_data['resources'][0]['secret_data']['data']
     return secret_values
 
 # Llama a la función una vez y almacena los valores para su uso posterior en el script
 secret_id = 'e4d3d765-6255-f517-cd2e-b76551c9b56c'
+# Asegúrate de que los secretos estén en formato JSON apropiado para su uso
 secretos = obtener_secreto(secret_id)
 
 def generar_nombre_bucket():
