@@ -18,9 +18,13 @@ secrets_manager.set_service_url('https://65e7ac31-7d3d-4c5f-9545-f848e11f8a26.pr
 def obtener_secreto(secret_id):
     response = secrets_manager.get_secret(id=secret_id)
     secret_data = response.get_result()
-    # Accede a la clave 'data' para los secretos tipo clave-valor
-    secret_values = secret_data['resources'][0]['secret_data']['data']
-    return secret_values
+    # Accede directamente a la clave 'data' que contiene los pares clave-valor
+    # del secreto tipo 'kv'
+    if 'secret_data' in secret_data and 'data' in secret_data['secret_data']:
+        secret_values = secret_data['secret_data']['data']
+        return secret_values
+    else:
+        return {}  # Retorna un diccionario vacío si la estructura esperada no está presente
 
 # Llama a la función una vez y almacena los valores para su uso posterior en el script
 secret_id = 'e4d3d765-6255-f517-cd2e-b76551c9b56c'
