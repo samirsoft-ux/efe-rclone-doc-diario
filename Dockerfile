@@ -22,14 +22,14 @@ RUN adduser \
 
 RUN chown appuser:appuser /app
 
-# Instalar rclone
-RUN apt-get update && apt-get install -y rclone && rm -rf /var/lib/apt/lists/*
+# Instalar rclone y actualizar pip
+RUN apt-get update && apt-get install -y rclone && rm -rf /var/lib/apt/lists/* && \
+    pip install --upgrade pip
 
-# Actualiza pip e instala dependencias de Python
+# Instalar dependencias de Python, incluyendo el SDK de IBM Secrets Manager
 # Asegúrate de tener un archivo requirements.txt en tu directorio de proyecto
-# Si optas por usar requirements.txt, no olvides agregar ibm-cloud-sdk-core y ibm-secrets-manager-sdk a este archivo
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir psycopg2-binary ibm-cos-sdk ibm-cloud-sdk-core ibm-secrets-manager-sdk requests
+# Si decides no usar un requirements.txt, instala las dependencias directamente con pip
+RUN pip install --no-cache-dir psycopg2-binary ibm-cos-sdk requests "ibm-secrets-manager-sdk"
 
 # Cambiar al usuario no privilegiado para ejecutar la aplicación
 USER appuser
