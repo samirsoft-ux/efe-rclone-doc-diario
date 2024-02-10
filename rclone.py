@@ -15,10 +15,10 @@ secrets_manager = SecretsManagerV2(authenticator=authenticator)
 secrets_manager.set_service_url('https://65e7ac31-7d3d-4c5f-9545-f848e11f8a26.private.us-south.secrets-manager.appdomain.cloud')
 
 def obtener_secreto(secret_id):
-    response = secrets_manager.get_secret_version({'secret_id': secret_id})
+    response = secrets_manager.get_secret(id=secret_id)
     secret_data = response.get_result()
     # Asumiendo que el secreto es un objeto JSON con tus variables
-    secret_values = secret_data['resources'][0]['secret_data']['payload']
+    secret_values = secret_data['resources'][0]['secret_data']  # Ajuste según la estructura real de tus datos
     return secret_values
 
 # Llama a la función una vez y almacena los valores para su uso posterior en el script
