@@ -1,29 +1,12 @@
 import subprocess
+import os
 from datetime import datetime
 import zoneinfo
 import ibm_boto3
 from ibm_botocore.client import Config
-from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
-from ibm_secrets_manager_sdk import SecretsManagerV1
 
 # Establecer la zona horaria de Lima, Perú
 timezone_lima = zoneinfo.ZoneInfo("America/Lima")
-
-# Configuración de IBM Secret Manager
-authenticator = IAMAuthenticator('dJxj9q28QtO_SvoAk6guuC1kqOE5UfwfXWCaP6FwbRII')
-secrets_manager = SecretsManagerV1(authenticator=authenticator)
-secrets_manager.set_service_url('https://65e7ac31-7d3d-4c5f-9545-f848e11f8a26.private.us-south.secrets-manager.appdomain.cloud')
-secret_id = 'e4d3d765-6255-f517-cd2e-b76551c9b56c'
-
-def obtener_secreto():
-    response = secrets_manager.get_secret(secret_id)
-    secret_data = response.get_result()
-    # Asumiendo que el secreto es un objeto JSON con tus variables
-    secret_values = secret_data['resources'][0]['secret_data']['payload']
-    return secret_values
-
-# Llama a la función una vez y almacena los valores para su uso posterior en el script
-secretos = obtener_secreto()
 
 def generar_nombre_bucket():
     fecha_actual = datetime.now(timezone_lima)
@@ -48,13 +31,12 @@ def ejecutar_comando_rclone(comando):
 
 def crear_configuracion_rclone():
     print("Iniciando la creación de la configuración de rclone...")
-    # Los valores ahora se recuperan del diccionario 'secretos'
-    source_access_key_id = secretos['SOURCE_ACCESS_KEY_ID']
-    source_secret_access_key = secretos['SOURCE_SECRET_ACCESS_KEY']
-    destination_access_key_id = secretos['DESTINATION_ACCESS_KEY_ID']
-    destination_secret_access_key = secretos['DESTINATION_SECRET_ACCESS_KEY']
-    source_endpoint = secretos['SOURCE_ENDPOINT']
-    destination_endpoint = secretos['DESTINATION_ENDPOINT']
+    source_access_key_id = os.environ.get('SOURCE_ACCESS_KEY_ID')
+    source_secret_access_key = os.environ.get('SOURCE_SECRET_ACCESS_KEY')
+    destination_access_key_id = os.environ.get('DESTINATION_ACCESS_KEY_ID')
+    destination_secret_access_key = os.environ.get('DESTINATION_SECRET_ACCESS_KEY')
+    source_endpoint = os.environ.get('SOURCE_ENDPOINT')
+    destination_endpoint = os.environ.get('DESTINATION_ENDPOINT')
     config = f"""
     [COS_SOURCE]
     type = s3
@@ -77,15 +59,14 @@ def crear_configuracion_rclone():
     print("Configuración de rclone creada exitosamente.")
 
 def aplicar_politica_ciclo_vida(bucket_name):
-    # Los valores ahora se recuperan del diccionario 'secretos'
     cos_client = ibm_boto3.client('s3',
-                                  ibm_api_key_id=secretos['IBM_COS_API_KEY'],
-                                  ibm_service_instance_id=secretos['IBM_SERVICE_INSTANCE_ID'],
+                                  ibm_api_key_id=os.environ.get('IBM_COS_API_KEY'),
+                                  ibm_service_instance_id=os.environ.get('IBM_SERVICE_INSTANCE_ID'),
                                   config=Config(signature_version='oauth'),
-                                  endpoint_url=secretos['IBM_COS_ENDPOINT'])
+                                  endpoint_url=os.environ.get('IBM_COS_ENDPOINT'))
 
-    dias_para_archivar = int(secretos['DIAS_PARA_ARCHIVAR'])
-    dias_para_eliminar = int(secretos['DIAS_PARA_ELIMINAR'])
+    dias_para_archivar = int(os.environ.get('DIAS_PARA_ARCHIVAR'))
+    dias_para_eliminar = int(os.environ.get('DIAS_PARA_ELIMINAR'))
 
     politica_ciclo_vida = {
         'Rules': [
@@ -96,7 +77,7 @@ def aplicar_politica_ciclo_vida(bucket_name):
                 'Transitions': [
                     {
                         'Days': dias_para_archivar,
-                        'StorageClass': 'GLACIER'
+                        'StorageClass': 'GLACIER'  # Asegúrate de que 'ARCHIVE' es soportado en tu configuración
                     }
                 ]
             },
@@ -120,7 +101,6 @@ def aplicar_politica_ciclo_vida(bucket_name):
     except cos_client.exceptions.ClientError as e:
         print(f"Error al aplicar la política de ciclo de vida: {e}")
 
-# Llama a las funciones en el orden necesario
 crear_configuracion_rclone()
 nombre_bucket_fecha = generar_nombre_bucket()
 crear_bucket_con_rclone(nombre_bucket_fecha)
@@ -132,7 +112,7 @@ transfers = 128  # Número de objetos a transferir en paralelo
 multi_thread_streams = 4  # Descarga de archivos grandes en partes en paralelo
 s3_upload_concurrency = 4  # Número de partes de archivos grandes a subir en paralelo
 
-cos_source_bucket = secretos['COS_SOURCE_NAME']
+cos_source_bucket = os.environ.get('COS_SOURCE_NAME')
 cos_destination_bucket = nombre_bucket_fecha
 
 print("Verificando la configuración del bucket de origen...")

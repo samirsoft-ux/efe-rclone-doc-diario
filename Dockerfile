@@ -22,18 +22,14 @@ RUN adduser \
 
 RUN chown appuser:appuser /app
 
-# Instalar cliente de PostgreSQL (opcional, si lo necesitas para tu aplicación)
-# RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
-
 # Instalar rclone
 RUN apt-get update && apt-get install -y rclone && rm -rf /var/lib/apt/lists/*
 
-# Instalar dependencias de Python, si las hay
+# Actualiza pip e instala dependencias de Python
 # Asegúrate de tener un archivo requirements.txt en tu directorio de proyecto
-# RUN pip install --no-cache-dir -r requirements.txt
-
-# Instalar dependencias específicas de tu proyecto incluyendo requests
-RUN pip install --no-cache-dir psycopg2-binary ibm-cos-sdk requests
+# Si optas por usar requirements.txt, no olvides agregar ibm-cloud-sdk-core y ibm-secrets-manager-sdk a este archivo
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir psycopg2-binary ibm-cos-sdk ibm-cloud-sdk-core ibm-secrets-manager-sdk requests
 
 # Cambiar al usuario no privilegiado para ejecutar la aplicación
 USER appuser
