@@ -26,7 +26,7 @@ def obtener_secreto(secret_id):
         print("La estructura del secreto no es como se esperaba.")
         return {}
 
-secret_id = 'e4d3d765-6255-f517-cd2e-b76551c9b56c'
+secret_id = 'bbd00bf7-aea3-2d43-af5d-c09fc1563e84'
 secretos = obtener_secreto(secret_id)
 
 # Imprime los secretos para depuración
