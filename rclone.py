@@ -10,8 +10,10 @@ import json
 # Establecer la zona horaria de Lima, Perú
 timezone_lima = zoneinfo.ZoneInfo("America/Lima")
 
+secret_api_key = os.environ.get("SECRET_IBM_API_KEY")
+
 # Configuración de IBM Secret Manager
-authenticator = IAMAuthenticator('dJxj9q28QtO_SvoAk6guuC1kqOE5UfwfXWCaP6FwbRII')
+authenticator = IAMAuthenticator(secret_api_key)
 secrets_manager = SecretsManagerV2(authenticator=authenticator)
 secrets_manager.set_service_url('https://65e7ac31-7d3d-4c5f-9545-f848e11f8a26.private.us-south.secrets-manager.appdomain.cloud')
 
@@ -26,7 +28,7 @@ def obtener_secreto(secret_id):
         print("La estructura del secreto no es como se esperaba.")
         return {}
 
-secret_id = 'bbd00bf7-aea3-2d43-af5d-c09fc1563e84'
+secret_id = os.environ.get("SECRET_ID_PORTAL")
 secretos = obtener_secreto(secret_id)
 
 def generar_nombre_bucket():
