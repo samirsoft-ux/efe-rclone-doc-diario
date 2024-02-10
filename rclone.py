@@ -18,18 +18,19 @@ secrets_manager.set_service_url('https://65e7ac31-7d3d-4c5f-9545-f848e11f8a26.pr
 def obtener_secreto(secret_id):
     response = secrets_manager.get_secret(id=secret_id)
     secret_data = response.get_result()
-    # Accede directamente a la clave 'data' que contiene los pares clave-valor
-    # del secreto tipo 'kv'
     if 'secret_data' in secret_data and 'data' in secret_data['secret_data']:
+        # Asume que los datos están en formato clave-valor dentro de 'data'
         secret_values = secret_data['secret_data']['data']
         return secret_values
     else:
-        return {}  # Retorna un diccionario vacío si la estructura esperada no está presente
+        print("La estructura del secreto no es como se esperaba.")
+        return {}
 
-# Llama a la función una vez y almacena los valores para su uso posterior en el script
 secret_id = 'e4d3d765-6255-f517-cd2e-b76551c9b56c'
-# Asegúrate de que los secretos estén en formato JSON apropiado para su uso
 secretos = obtener_secreto(secret_id)
+
+# Imprime los secretos para depuración
+print("Secretos recuperados:", secretos)
 
 def generar_nombre_bucket():
     fecha_actual = datetime.now(timezone_lima)
@@ -53,27 +54,30 @@ def ejecutar_comando_rclone(comando):
     return stdout.decode(), stderr.decode()
 
 def crear_configuracion_rclone():
-    print("Iniciando la creación de la configuración de rclone...")
-    config = f"""
-    [COS_SOURCE]
-    type = s3
-    provider = IBMCOS
-    env_auth = false
-    access_key_id = {secretos['SOURCE_ACCESS_KEY_ID']}
-    secret_access_key = {secretos['SOURCE_SECRET_ACCESS_KEY']}
-    endpoint = {secretos['SOURCE_ENDPOINT']}
+    if 'SOURCE_ACCESS_KEY_ID' in secretos and 'SOURCE_SECRET_ACCESS_KEY' in secretos:
+        print("Iniciando la creación de la configuración de rclone...")
+        config = f"""
+        [COS_SOURCE]
+        type = s3
+        provider = IBMCOS
+        env_auth = false
+        access_key_id = {secretos['SOURCE_ACCESS_KEY_ID']}
+        secret_access_key = {secretos['SOURCE_SECRET_ACCESS_KEY']}
+        endpoint = {secretos['SOURCE_ENDPOINT']}
 
-    [COS_DESTINATION]
-    type = s3
-    provider = IBMCOS
-    env_auth = false
-    access_key_id = {secretos['DESTINATION_ACCESS_KEY_ID']}
-    secret_access_key = {secretos['DESTINATION_SECRET_ACCESS_KEY']}
-    endpoint = {secretos['DESTINATION_ENDPOINT']}
-    """
-    with open("rclone.conf", "w") as file:
-        file.write(config)
-    print("Configuración de rclone creada exitosamente.")
+        [COS_DESTINATION]
+        type = s3
+        provider = IBMCOS
+        env_auth = false
+        access_key_id = {secretos['DESTINATION_ACCESS_KEY_ID']}
+        secret_access_key = {secretos['DESTINATION_SECRET_ACCESS_KEY']}
+        endpoint = {secretos['DESTINATION_ENDPOINT']}
+        """
+        with open("rclone.conf", "w") as file:
+            file.write(config)
+        print("Configuración de rclone creada exitosamente.")
+    else:
+        print("Error: No se encontraron las claves esperadas en los secretos.")
 
 def aplicar_politica_ciclo_vida(bucket_name):
     cos_client = ibm_boto3.client('s3',
